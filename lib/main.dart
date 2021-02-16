@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:login_app/bloc/list_users_bloc.dart';
+import 'package:login_app/bloc/home/list_users_bloc.dart';
 import 'package:login_app/screens/home_screen.dart';
 import 'package:login_app/screens/login_screen.dart';
+
+import 'bloc/login/login_bloc.dart';
 
 void main() {
   print('Run App');
@@ -22,8 +24,8 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: BlocProvider(
-        create: (context) => ListUsersBloc(),
-        child: HomeScreen()
+        create: (context) => LoginBloc(),
+        child: LoginScreen()
       ),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazy_load_scrollview/lazy_load_scrollview.dart';
-import 'package:login_app/bloc/list_users_bloc.dart';
+import 'package:login_app/bloc/home/list_users_bloc.dart';
 import 'package:login_app/screens/user_item.dart';
 import 'package:login_app/model/user_model.dart';
 
