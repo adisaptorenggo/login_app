@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:formz/formz.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:login_app/bloc/home/list_users_bloc.dart';
+import 'package:login_app/bloc/login/login_bloc.dart';
+import 'package:login_app/screens/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -8,13 +13,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
 
   static const double _marginLogin = 40.0;
-  static const double _imageWidth = 120.0;
-  static const double _imageHeight = 180.0;
-
-  var _formKey = GlobalKey<FormState>();
-
-  TextEditingController _emailController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
 
   @override
   void dispose() {
@@ -52,30 +50,37 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               Container(
                 margin: const EdgeInsets.only(left: _marginLogin, right: _marginLogin),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _emailController,
-                        cursorColor: Colors.blue,
-                        keyboardType: TextInputType.text,
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          labelText: 'E-mail',
-                        ),
+                child: BlocBuilder<LoginBloc, LoginState>(
+                  buildWhen: (previous, current) => previous.username != current.username,
+                  builder: (context, state) {
+                    return TextField(
+                      key: const Key('loginForm_usernameInput_textField'),
+                      onChanged: (username) =>
+                          context.read<LoginBloc>().add(LoginUsernameChanged(username)),
+                      decoration: InputDecoration(
+                        labelText: 'username',
+                        errorText: state.username.invalid ? 'invalid username' : null,
                       ),
-                      TextFormField(
-                        controller: _passwordController,
-                        cursorColor: Colors.blue,
-                        keyboardType: TextInputType.visiblePassword,
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                        ),
+                    );
+                  },
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.only(left: _marginLogin, right: _marginLogin),
+                child: BlocBuilder<LoginBloc, LoginState>(
+                  buildWhen: (previous, current) => previous.password != current.password,
+                  builder: (context, state) {
+                    return TextField(
+                      key: const Key('loginForm_passwordInput_textField'),
+                      onChanged: (password) =>
+                          context.read<LoginBloc>().add(LoginPasswordChanged(password)),
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'password',
+                        errorText: state.password.invalid ? 'invalid password' : null,
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
               Container(
@@ -85,18 +90,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.only(left: _marginLogin, right: _marginLogin),
-                        child: RaisedButton(
-                          child: Text('Log in'),
-                          elevation: 5,
-                          color: Colors.white,
-                          textColor: Colors.blue,
-                          onPressed: () => null,
+                        child: BlocBuilder<LoginBloc, LoginState>(
+                          buildWhen: (previous, current) => previous.status != current.status,
+                          builder: (context, state) {
+                            return state.status.isSubmissionInProgress
+                                ? const CircularProgressIndicator()
+                                : RaisedButton(
+                              key: const Key('loginForm_continue_raisedButton'),
+                              child: const Text('Login'),
+                              onPressed: state.status.isValidated
+                                  ? ()
+                              {
+                                context.read<LoginBloc>().add(const LoginSubmitted());
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => BlocProvider(
+                                            create: (context) => ListUsersBloc(),
+                                            child: HomeScreen())));
+                              }
+                                  : null,
+                            );
+                          },
                         ),
                       ),
                     )
                   ],
                 ),
               ),
+
             ],
           ),
         ),

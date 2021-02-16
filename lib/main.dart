@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:login_app/bloc/home/list_users_bloc.dart';
+import 'package:login_app/repository/authentication_repository.dart';
 import 'package:login_app/screens/home_screen.dart';
 import 'package:login_app/screens/login_screen.dart';
 
@@ -24,7 +25,7 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: BlocProvider(
-        create: (context) => LoginBloc(),
+        create: (context) => LoginBloc(authenticationRepository: AuthenticationRepository()),
         child: LoginScreen()
       ),
     );
