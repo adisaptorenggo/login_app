@@ -19,15 +19,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-
         primarySwatch: Colors.blue,
-
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: BlocProvider(
-        create: (context) => LoginBloc(authenticationRepository: AuthenticationRepository()),
-        child: LoginScreen()
-      ),
+      home:
+          BlocProvider(create: (context) => LoginBloc(), child: LoginScreen()),
     );
   }
 }

@@ -1,39 +1,55 @@
 part of 'login_bloc.dart';
 
-class LoginState extends Equatable {
+class LoginState {
+  final bool isLoading;
+  final bool isLoginButtonEnabled;
+  final String error;
+  final String token;
+
   const LoginState({
-    this.status = FormzStatus.pure,
-    this.username = const Username.pure(),
-    this.password = const Password.pure(),
+    @required this.isLoading,
+    @required this.isLoginButtonEnabled,
+    @required this.error,
+    @required this.token,
   });
 
-  final FormzStatus status;
-  final Username username;
-  final Password password;
-
-  LoginState copyWith({
-    FormzStatus status,
-    Username username,
-    Password password,
-  }) {
+  factory LoginState.initial() {
     return LoginState(
-      status: status ?? this.status,
-      username: username ?? this.username,
-      password: password ?? this.password,
+      isLoading: false,
+      isLoginButtonEnabled: true,
+      error: '',
+      token: '',
+    );
+  }
+
+  factory LoginState.loading() {
+    return LoginState(
+      isLoading: true,
+      isLoginButtonEnabled: false,
+      error: '',
+      token: '',
+    );
+  }
+
+  factory LoginState.failure(String error) {
+    return LoginState(
+      isLoading: false,
+      isLoginButtonEnabled: true,
+      error: error,
+      token: '',
+    );
+  }
+
+  factory LoginState.success(String token) {
+    return LoginState(
+      isLoading: false,
+      isLoginButtonEnabled: true,
+      error: '',
+      token: token,
     );
   }
 
   @override
-  List<Object> get props => [status, username, password];
-}
-
-class LoginSuccessFullState extends LoginState {
-  final int login;
-
-  LoginSuccessFullState({@required this.login});
-  @override
-  List<Object> get props => [login];
-}
-
-class LoginFailedState extends LoginState {
+  String toString() =>
+      'LoginState { isLoading: $isLoading, isLoginButtonEnabled: $isLoginButtonEnabled, error: $error, token: $token }';
 }

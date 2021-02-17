@@ -11,117 +11,119 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
-  static const double _marginLogin = 40.0;
+  LoginBloc _bloc;
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
-  void dispose() {
-    super.dispose();
+  void initState() {
+    _bloc = BlocProvider.of<LoginBloc>(context);
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomPadding: true,
-      body: GestureDetector(
-        onTap: (){
-          FocusScopeNode currentScope = FocusScope.of(context);
-          FocusScopeNode rootScope =
-              WidgetsBinding.instance.focusManager.rootScope;
-          if (currentScope != rootScope) {
-            currentScope.unfocus();
-          }
-          // FocusScope.of(context).requestFocus(FocusNode());
-        },
-        child: Material(
-          color: Colors.white,
-          child: ListView(
-            children: <Widget>[
-              Container(
-                height: MediaQuery.of(context).size.height/1.8,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Text('Simple App'),
-                    ],
-                  ),
-                ),
+    return BlocBuilder<LoginBloc, LoginState>(
+      builder: (
+        BuildContext context,
+        LoginState loginState,
+      ) {
+        if (_loginSucceeded(loginState)) {
+          _bloc.add(LoggedIn());
+          _onWidgetDidBuild(() {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) {
+                  return BlocProvider(
+                    create: (context) => ListUsersBloc(),
+                    child: HomeScreen(),
+                  );
+                },
               ),
-              Container(
-                margin: const EdgeInsets.only(left: _marginLogin, right: _marginLogin),
-                child: BlocBuilder<LoginBloc, LoginState>(
-                  buildWhen: (previous, current) => previous.username != current.username,
-                  builder: (context, state) {
-                    return TextField(
-                      key: const Key('loginForm_usernameInput_textField'),
-                      onChanged: (username) =>
-                          context.read<LoginBloc>().add(LoginUsernameChanged(username)),
-                      decoration: InputDecoration(
-                        labelText: 'username',
-                        errorText: state.username.invalid ? 'invalid username' : null,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Container(
-                margin: const EdgeInsets.only(left: _marginLogin, right: _marginLogin),
-                child: BlocBuilder<LoginBloc, LoginState>(
-                  buildWhen: (previous, current) => previous.password != current.password,
-                  builder: (context, state) {
-                    return TextField(
-                      key: const Key('loginForm_passwordInput_textField'),
-                      onChanged: (password) =>
-                          context.read<LoginBloc>().add(LoginPasswordChanged(password)),
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: 'password',
-                        errorText: state.password.invalid ? 'invalid password' : null,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Container(
-                margin: EdgeInsets.only(top: 10.0),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: _marginLogin, right: _marginLogin),
-                        child: BlocBuilder<LoginBloc, LoginState>(
-                          buildWhen: (previous, current) => previous.status != current.status,
-                          builder: (context, state) {
-                            return state.status.isSubmissionInProgress
-                                ? const CircularProgressIndicator()
-                                : RaisedButton(
-                              key: const Key('loginForm_continue_raisedButton'),
-                              child: const Text('Login'),
-                              onPressed: state.status.isValidated
-                                  ? ()
-                              {
-                                context.read<LoginBloc>().add(const LoginSubmitted());
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) => BlocProvider(
-                                            create: (context) => ListUsersBloc(),
-                                            child: HomeScreen())));
-                              }
-                                  : null,
-                            );
-                          },
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
+            );
+          });
+        }
 
-            ],
+        if (_loginFailed(loginState)) {
+          _onWidgetDidBuild(() {
+            showAlertDialog(context);
+          });
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Login'),
           ),
-        ),
+          body: _form(loginState),
+        );
+      },
+    );
+  }
+
+  showAlertDialog(BuildContext context) {
+    Widget okButton = FlatButton(
+      child: Text("OK"),
+      onPressed: () {
+        Navigator.pop(context);
+      },
+    );
+
+    AlertDialog alert = AlertDialog(
+      title: Text("Login Failed"),
+      content: Text("Authentication Failed"),
+      actions: [
+        okButton,
+      ],
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+  Widget _form(LoginState loginState) {
+    return Form(
+      child: Column(
+        children: [
+          TextFormField(
+            decoration: InputDecoration(labelText: 'username'),
+            controller: _usernameController,
+          ),
+          TextFormField(
+            decoration: InputDecoration(labelText: 'password'),
+            controller: _passwordController,
+            obscureText: true,
+          ),
+          RaisedButton(
+            onPressed:
+                loginState.isLoginButtonEnabled ? _onLoginButtonPressed : null,
+            child: Text('Login'),
+          ),
+          Container(
+            child: loginState.isLoading ? CircularProgressIndicator() : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _loginSucceeded(LoginState state) => state.token.isNotEmpty;
+  bool _loginFailed(LoginState state) => state.error.isNotEmpty;
+
+  void _onWidgetDidBuild(Function callback) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      callback();
+    });
+  }
+
+  _onLoginButtonPressed() {
+    _bloc.add(
+      LoginButtonPressed(
+        username: _usernameController.text,
+        password: _passwordController.text,
       ),
     );
   }

@@ -1,30 +1,8 @@
-// import 'dart:async';
-//
-// import 'package:bloc/bloc.dart';
-// import 'package:equatable/equatable.dart';
-// import 'package:meta/meta.dart';
-//
-// part 'login_event.dart';
-// part 'login_state.dart';
-//
-// class LoginBloc extends Bloc<LoginEvent, LoginState> {
-//   LoginBloc() : super(LoginInitial());
-//
-//   @override
-//   Stream<LoginState> mapEventToState(
-//     LoginEvent event,
-//   ) async* {
-//     // TODO: implement mapEventToState
-//   }
-// }
-
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:formz/formz.dart';
-import 'package:login_app/model/password_model.dart';
-import 'package:login_app/model/username_model.dart';
 import 'package:login_app/repository/authentication_repository.dart';
 import 'package:meta/meta.dart';
 
@@ -32,65 +10,41 @@ part 'login_event.dart';
 part 'login_state.dart';
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
-  LoginBloc({@required AuthenticationRepository authenticationRepository,})  : assert(authenticationRepository != null),
-        _authenticationRepository = authenticationRepository,
-        super(const LoginState());
+  LoginBloc() : super(LoginState.initial());
 
-  final AuthenticationRepository _authenticationRepository;
+  AuthenticationRepository _repository = AuthenticationRepository();
 
   @override
   Stream<LoginState> mapEventToState(
-      LoginEvent event,
-      ) async* {
-    if (event is LoginUsernameChanged) {
-      yield _mapUsernameChangedToState(event, state);
-    } else if (event is LoginPasswordChanged) {
-      yield _mapPasswordChangedToState(event, state);
-    } else if (event is LoginSubmitted) {
-      yield* _mapLoginSubmittedToState(event, state);
-    }
-  }
+    LoginEvent event,
+  ) async* {
+    if (event is LoginButtonPressed) {
+      yield LoginState.loading();
 
-  LoginState _mapUsernameChangedToState(
-      LoginUsernameChanged event,
-      LoginState state,
-      ) {
-    final username = Username.dirty(event.username);
-    return state.copyWith(
-      username: username,
-      status: Formz.validate([state.password, username]),
-    );
-  }
-
-  LoginState _mapPasswordChangedToState(
-      LoginPasswordChanged event,
-      LoginState state,
-      ) {
-    final password = Password.dirty(event.password);
-    return state.copyWith(
-      password: password,
-      status: Formz.validate([password, state.username]),
-    );
-  }
-
-  Stream<LoginState> _mapLoginSubmittedToState(
-      LoginSubmitted event,
-      LoginState state,
-      ) async* {
-    if (state.status.isValidated) {
-      yield state.copyWith(status: FormzStatus.submissionInProgress);
       try {
-        await _authenticationRepository.logIn(
-          username: state.username.value,
-          password: state.password.value,
+        final token = await _getToken(
+          username: event.username,
+          password: event.password,
         );
-        // yield LoginSuccessFullState(login: 0);
-        yield state.copyWith(status: FormzStatus.submissionSuccess);
-      } on Exception catch (_) {
-        // yield LoginSuccessFullState(login: 1);
-        yield state.copyWith(status: FormzStatus.submissionFailure);
+
+        yield LoginState.success(token);
+      } catch (error) {
+        yield LoginState.failure(error.toString());
       }
     }
+
+    if (event is LoggedIn) {
+      yield LoginState.initial();
+    }
+  }
+
+  Future<String> _getToken({
+    @required String username,
+    @required String password,
+  }) async {
+    final reqData = await _repository.sendAuthentication(
+        username: username, password: password);
+    print(reqData.toString());
+    return reqData;
   }
 }
-
